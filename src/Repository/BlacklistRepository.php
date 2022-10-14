@@ -4,42 +4,35 @@ namespace App\Repository;
 
 use App\Entity\Blacklist;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\ORM\NonUniqueResultException;
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @method Blacklist|null find($cpf, $lockMode = null, $lockVersion = null)
+ * @method Blacklist|null find($id, $lockMode = null, $lockVersion = null)
  * @method Blacklist|null findOneBy(array $criteria, array $orderBy = null)
  * @method Blacklist[]    findAll()
  * @method Blacklist[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
  */
 class BlacklistRepository extends ServiceEntityRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    /**
+     * @var EntityManagerInterface
+     */
+    private $entityManager;
+
+    public function __construct(EntityManagerInterface $entityManager, ManagerRegistry $registry)
     {
+        $this->entityManager = $entityManager;
         parent::__construct($registry, Blacklist::class);
     }
 
-    // /**
-    //  * @return Blacklist[] Returns an array of Blacklist objects
-    //  */
-
-    public function findByExampleField($value)
+    public function findAllCpfsBlacklist()
     {
         return $this->createQueryBuilder('blacklist')
-            ->andWhere('blacklist.cpf = :val')
-            ->setParameter('val', $value)
-            ->orderBy('blacklist.id', 'ASC')
-            ->setMaxResults(10)
             ->getQuery()
-            ->getResult()
-        ;
+            ->getArrayResult();
     }
 
-
-    /**
-     * @throws NonUniqueResultException
-     */
     public function findOneBySomeField($cpf): ?Blacklist
     {
         return $this->createQueryBuilder('blacklist')
@@ -48,6 +41,20 @@ class BlacklistRepository extends ServiceEntityRepository
             ->getQuery()
             ->getOneOrNullResult()
         ;
+    }
+
+    public function save(Blacklist $data): ?Blacklist
+    {
+        $this->entityManager->persist($data);
+        $this->entityManager->flush();
+        return $data;
+    }
+
+    public function remove(Blacklist $data): ?Blacklist
+    {
+        $this->entityManager->remove($data);
+        $this->entityManager->flush();
+        return $data;
     }
 
 }

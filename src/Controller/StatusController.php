@@ -2,8 +2,10 @@
 
 namespace App\Controller;
 
+use App\Command\StatusCommand;
 use App\Entity\Blacklist;
 use App\Entity\Status;
+use App\Service\StatusService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -18,28 +20,26 @@ class StatusController extends AbstractController
      */
     private $entityManager;
 
+    /**
+     * @var StatusCommand
+     */
+    private $statusCommand;
 
 
-    public function __construct(EntityManagerInterface $entityManager)
+    public function __construct(EntityManagerInterface $entityManager, StatusCommand $StatusCommand)
     {
         $this->entityManager = $entityManager;
+        $this->statusCommand = $StatusCommand;
     }
 
 
     /**
-     * @Route ("/status", methods={"POST"})
+     * @Route ("/status", methods={"GET"})
      */
-    public function createStatus(Request $request): Response
+    public function getAllCpfsBlackList(): Response
     {
-        $body = $request->getContent();
-        $data = json_decode($body);
+        $data = $this->statusCommand->status();
 
-        $list = new Status();
-        $list->setConsult($data->consult);
-
-        $this->entityManager->persist($list);
-        $this->entityManager->flush();
-
-        return new JsonResponse($list);
+        return new JsonResponse($data, 200);
     }
 }

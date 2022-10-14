@@ -2,7 +2,7 @@
 
 namespace App\Controller;
 
-use App\Entity\Blacklist;
+use App\Controller\Exception\BadRequestException;
 use App\Service\BlacklistService;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\NonUniqueResultException;
@@ -10,7 +10,6 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 
 class BlacklistController extends AbstractController
@@ -42,7 +41,7 @@ class BlacklistController extends AbstractController
         $list = $this->blacklistService->includeCpfBlacklist($body);
 
         if(is_null($list)){
-            throw new BadRequestHttpException('CPF is already on the blacklist', null, 404);
+            throw new BadRequestException('CPF is already on the blacklist', 422);
         }
 
         return new JsonResponse($list);
@@ -56,15 +55,38 @@ class BlacklistController extends AbstractController
     {
         $data = $this->blacklistService->checksCpfBlacklist($cpf);
 
-        $codeReturn = is_null($data) ? Response::HTTP_NO_CONTENT : 200;
+        if(is_null($data)){
+            return new JsonResponse([ 'status' => 'FREE'], 200);
+        }
 
-        $result = [
-            "id" => $data->getId(),
-            "cpf" => $data->getCpf(),
-            "date" => $data->getCreateAt()
-        ];
+        return new JsonResponse([ 'status' => 'BLOCK'], 200);
+
+    }
+
+    /**
+     * @Route ("/list", methods={"GET"})
+     */
+    public function getAllCpfsBlackList(): Response
+    {
+        $data = $this->blacklistService->getAllCpfsBlacklist();
+
+        return new JsonResponse($data, 200);
+    }
+
+
+    /**
+     * @Route ("/list/{cpf}", methods={"DELETE"})
+     */
+    public function removeCpf(string $cpf): JsonResponse
+    {
+        $result = $this->blacklistService->removeCpf($cpf);
+
+        if(is_null($result)){
+            throw new BadRequestException('CPF does not exist on the blacklist!', null, 404);
+        }
+
+        $codeReturn = Response::HTTP_OK;
 
         return new JsonResponse($result, $codeReturn);
-
     }
 }

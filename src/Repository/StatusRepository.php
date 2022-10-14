@@ -2,7 +2,11 @@
 
 namespace App\Repository;
 
+use App\Entity\Blacklist;
 use App\Entity\Status;
+use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\Persistence\ManagerRegistry;
 
 /**
  * @method Status|null find($id, $lockMode = null, $lockVersion = null)
@@ -10,12 +14,36 @@ use App\Entity\Status;
  * @method Status[]    findAll()
  * @method Status[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
  */
-class StatusRepository
+class StatusRepository extends ServiceEntityRepository
 {
-//    public function __construct(ManagerRegistry $registry)
-//    {
-//        parent::__construct($registry, Status::class);
-//    }
+    /**
+     * @var EntityManagerInterface
+     */
+    private $entityManager;
+
+    public function __construct(EntityManagerInterface $entityManager, ManagerRegistry $registry)
+    {
+        $this->entityManager = $entityManager;
+        parent::__construct($registry, Status::class);
+    }
+
+    public function save(): Status
+    {
+        $date = new \DateTime();
+        $status = new Status();
+        $status->setConsult($date);
+
+        $this->entityManager->persist($status);
+        $this->entityManager->flush();
+        return $status;
+    }
+
+    public function findAllConsults()
+    {
+        return $this->createQueryBuilder('status')
+            ->getQuery()
+            ->getArrayResult();
+    }
 
     // /**
     //  * @return Status[] Returns an array of Blacklist objects
